@@ -20,6 +20,7 @@ package com.github.kklisura.cdt.protocol.types.network;
  * #L%
  */
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /** Resource type as it was perceived by the rendering engine. */
@@ -29,6 +30,7 @@ public enum ResourceType {
   @JsonProperty("Stylesheet")
   STYLESHEET,
   @JsonProperty("Image")
+  @JsonAlias("Img")
   IMAGE,
   @JsonProperty("Media")
   MEDIA,
