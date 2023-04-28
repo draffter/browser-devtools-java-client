@@ -51,6 +51,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Kenan Klisura
  */
 public class ChromeServiceImpl implements ChromeService {
+
   public static final String ABOUT_BLANK_PAGE = "about:blank";
 
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -74,8 +75,8 @@ public class ChromeServiceImpl implements ChromeService {
   /**
    * Creates a new chrome service given a host, port and web service socket factory.
    *
-   * @param host Chrome host.
-   * @param port Chrome debugging port.
+   * @param host                    Chrome host.
+   * @param port                    Chrome debugging port.
    * @param webSocketServiceFactory Web socket service factory.
    */
   public ChromeServiceImpl(String host, int port, WebSocketServiceFactory webSocketServiceFactory) {
@@ -106,7 +107,7 @@ public class ChromeServiceImpl implements ChromeService {
   /**
    * Creates new chrome service given a port. Host is assumed to be localhost.
    *
-   * @param port Chrome debugging port.
+   * @param port                    Chrome debugging port.
    * @param webSocketServiceFactory Web socket service factory.
    */
   public ChromeServiceImpl(int port, WebSocketServiceFactory webSocketServiceFactory) {
@@ -134,7 +135,7 @@ public class ChromeServiceImpl implements ChromeService {
 
   @Override
   public ChromeTab createTab(String tab) throws ChromeServiceException {
-    return request(ChromeTab.class, "http://%s:%d/%s?%s", host, port, CREATE_TAB, tab);
+    return requestWithMethod("PUT", ChromeTab.class, "http://%s:%d/%s?%s", host, port, CREATE_TAB, tab);
   }
 
   @Override
@@ -185,8 +186,8 @@ public class ChromeServiceImpl implements ChromeService {
       ChromeDevToolsServiceImpl chromeDevToolsService =
           ProxyUtils.createProxyFromAbstract(
               ChromeDevToolsServiceImpl.class,
-              new Class[] {WebSocketService.class, ChromeDevToolsServiceConfiguration.class},
-              new Object[] {webSocketService, chromeDevToolsServiceConfiguration},
+              new Class[]{WebSocketService.class, ChromeDevToolsServiceConfiguration.class},
+              new Object[]{webSocketService, chromeDevToolsServiceConfiguration},
               (unused, method, args) ->
                   commandsCache.computeIfAbsent(
                       method,
@@ -255,13 +256,19 @@ public class ChromeServiceImpl implements ChromeService {
    * Sends a request and parses json response as type T.
    *
    * @param responseType Resulting class type.
-   * @param path Path with optional params similar to String.formats params.
-   * @param params Path params.
-   * @param <T> Type of response type.
+   * @param path         Path with optional params similar to String.formats params.
+   * @param params       Path params.
+   * @param <T>          Type of response type.
    * @return Response object.
    * @throws ChromeServiceException If sending request fails due to any reason.
    */
   private static <T> T request(Class<T> responseType, String path, Object... params)
+      throws ChromeServiceException {
+    return requestWithMethod("GET", responseType, path, params);
+  }
+
+  private static <T> T requestWithMethod(
+      String method, Class<T> responseType, String path, Object... params)
       throws ChromeServiceException {
     HttpURLConnection connection = null;
     InputStream inputStream = null;
@@ -269,7 +276,7 @@ public class ChromeServiceImpl implements ChromeService {
     try {
       URL uri = new URL(String.format(path, params));
       connection = (HttpURLConnection) uri.openConnection();
-      connection.setRequestMethod("PUT");
+      connection.setRequestMethod(method);
 
       int responseCode = connection.getResponseCode();
       if (HttpURLConnection.HTTP_OK == responseCode) {
